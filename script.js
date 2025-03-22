@@ -8,38 +8,43 @@ async function fetchRaceData() {
     try {
         const response = await fetch(API_URL_LATEST_MEETING);
         const data = await response.json();
+        
+        console.log("Latest Meeting Data:", data); // Debugging output
 
-        if (data.length === 0) {
+        if (!data || data.length === 0) {
             currentRaceEl.innerHTML = "<p>No current race available.</p>";
             upcomingRaceEl.innerHTML = "<p>No upcoming race found.</p>";
             return;
         }
 
         const latestMeeting = data[0]; // Latest race weekend
-        const raceDate = new Date(latestMeeting.date_start);
-        const gmtOffset = latestMeeting.gmt_offset; // Convert to local time
+        const raceDate = latestMeeting.date_start ? new Date(latestMeeting.date_start) : "Unknown Date";
+        const gmtOffset = latestMeeting.gmt_offset || "N/A";
 
         currentRaceEl.innerHTML = `
             <h2>Current Race</h2>
-            <p><strong>${latestMeeting.meeting_name}</strong> (${latestMeeting.meeting_official_name})</p>
-            <p>📍 ${latestMeeting.location}, ${latestMeeting.country_name}</p>
-            <p>🏁 Circuit: ${latestMeeting.circuit_short_name}</p>
-            <p>📅 Start Time: ${raceDate.toLocaleString()} (GMT ${gmtOffset})</p>
+            <p><strong>${latestMeeting.meeting_name || "Unknown Race"}</strong> (${latestMeeting.meeting_official_name || ""})</p>
+            <p>📍 ${latestMeeting.location || "Unknown Location"}, ${latestMeeting.country_name || "Unknown Country"}</p>
+            <p>🏁 Circuit: ${latestMeeting.circuit_short_name || "Unknown Circuit"}</p>
+            <p>📅 Start Time: ${raceDate !== "Unknown Date" ? raceDate.toLocaleString() : "Unknown"} (GMT ${gmtOffset})</p>
         `;
 
-        // 🏎️ **Predict Upcoming Race (Next Meeting)**
+        // 🏎️ **Fetch Upcoming Race**
         const responseAllMeetings = await fetch("https://api.openf1.org/v1/meetings");
         const allMeetings = await responseAllMeetings.json();
+        
+        console.log("All Meetings Data:", allMeetings); // Debugging output
 
         const upcomingMeeting = allMeetings.find(meeting => new Date(meeting.date_start) > new Date());
+
         if (upcomingMeeting) {
             const upcomingDate = new Date(upcomingMeeting.date_start);
             upcomingRaceEl.innerHTML = `
                 <h2>Upcoming Race</h2>
-                <p><strong>${upcomingMeeting.meeting_name}</strong> (${upcomingMeeting.meeting_official_name})</p>
-                <p>📍 ${upcomingMeeting.location}, ${upcomingMeeting.country_name}</p>
-                <p>🏁 Circuit: ${upcomingMeeting.circuit_short_name}</p>
-                <p>📅 Start Time: ${upcomingDate.toLocaleString()} (GMT ${upcomingMeeting.gmt_offset})</p>
+                <p><strong>${upcomingMeeting.meeting_name || "Unknown Race"}</strong> (${upcomingMeeting.meeting_official_name || ""})</p>
+                <p>📍 ${upcomingMeeting.location || "Unknown Location"}, ${upcomingMeeting.country_name || "Unknown Country"}</p>
+                <p>🏁 Circuit: ${upcomingMeeting.circuit_short_name || "Unknown Circuit"}</p>
+                <p>📅 Start Time: ${upcomingDate.toLocaleString()} (GMT ${upcomingMeeting.gmt_offset || "N/A"})</p>
             `;
         } else {
             upcomingRaceEl.innerHTML = "<p>No upcoming race found.</p>";
