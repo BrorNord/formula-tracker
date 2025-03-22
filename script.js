@@ -1,39 +1,54 @@
 const currentRaceEl = document.getElementById("current-race");
 const upcomingRaceEl = document.getElementById("upcoming-race");
 
-const API_URL_OPENF1 = "https://api.openf1.org/v1/sessions";
+const API_URL_LATEST_MEETING = "https://api.openf1.org/v1/meetings?meeting_key=latest";
 
-// 🏎️ **Fix: Fetch Current & Upcoming Race**
+// 🏎️ **Fetch Current & Upcoming Race**
 async function fetchRaceData() {
     try {
-        const response = await fetch(API_URL_OPENF1);
-        const races = await response.json();
+        const response = await fetch(API_URL_LATEST_MEETING);
+        const data = await response.json();
 
-        // Get today's date in UTC format
-        const today = new Date().toISOString().split("T")[0];
+        if (data.length === 0) {
+            currentRaceEl.innerHTML = "<p>No current race available.</p>";
+            upcomingRaceEl.innerHTML = "<p>No upcoming race found.</p>";
+            return;
+        }
 
-        // Filter race weekends by date
-        const raceWeekends = races
-            .filter(race => new Date(race.start_time).toISOString().split("T")[0] >= today)
-            .sort((a, b) => new Date(a.start_time) - new Date(b.start_time)); // Sort by date
+        const latestMeeting = data[0]; // Latest race weekend
+        const raceDate = new Date(latestMeeting.date_start);
+        const gmtOffset = latestMeeting.gmt_offset; // Convert to local time
 
-        const currentRace = raceWeekends.find(race => race.session_name === "Race");
-        const nextRace = raceWeekends.find(race => race.session_name === "Practice 1");
+        currentRaceEl.innerHTML = `
+            <h2>Current Race</h2>
+            <p><strong>${latestMeeting.meeting_name}</strong> (${latestMeeting.meeting_official_name})</p>
+            <p>📍 ${latestMeeting.location}, ${latestMeeting.country_name}</p>
+            <p>🏁 Circuit: ${latestMeeting.circuit_short_name}</p>
+            <p>📅 Start Time: ${raceDate.toLocaleString()} (GMT ${gmtOffset})</p>
+        `;
 
-        currentRaceEl.innerHTML = currentRace ? `
-            <p><strong>${currentRace.meeting_name}</strong> - ${currentRace.location}</p>
-            <p>Started at: ${new Date(currentRace.start_time).toLocaleString()}</p>
-        ` : `<p>No current race.</p>`;
+        // 🏎️ **Predict Upcoming Race (Next Meeting)**
+        const responseAllMeetings = await fetch("https://api.openf1.org/v1/meetings");
+        const allMeetings = await responseAllMeetings.json();
 
-        upcomingRaceEl.innerHTML = nextRace ? `
-            <p><strong>${nextRace.meeting_name}</strong> - ${nextRace.location}</p>
-            <p>Starts at: ${new Date(nextRace.start_time).toLocaleString()}</p>
-        ` : `<p>No upcoming race.</p>`;
+        const upcomingMeeting = allMeetings.find(meeting => new Date(meeting.date_start) > new Date());
+        if (upcomingMeeting) {
+            const upcomingDate = new Date(upcomingMeeting.date_start);
+            upcomingRaceEl.innerHTML = `
+                <h2>Upcoming Race</h2>
+                <p><strong>${upcomingMeeting.meeting_name}</strong> (${upcomingMeeting.meeting_official_name})</p>
+                <p>📍 ${upcomingMeeting.location}, ${upcomingMeeting.country_name}</p>
+                <p>🏁 Circuit: ${upcomingMeeting.circuit_short_name}</p>
+                <p>📅 Start Time: ${upcomingDate.toLocaleString()} (GMT ${upcomingMeeting.gmt_offset})</p>
+            `;
+        } else {
+            upcomingRaceEl.innerHTML = "<p>No upcoming race found.</p>";
+        }
 
     } catch (error) {
         console.error("Error fetching race data:", error);
-        currentRaceEl.innerHTML = `<p>Error loading data.</p>`;
-        upcomingRaceEl.innerHTML = `<p>Error loading data.</p>`;
+        currentRaceEl.innerHTML = "<p>Error loading current race data.</p>";
+        upcomingRaceEl.innerHTML = "<p>Error loading upcoming race data.</p>";
     }
 }
 
