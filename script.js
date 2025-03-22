@@ -1,17 +1,19 @@
 const currentRaceEl = document.getElementById("current-race");
 const upcomingRaceEl = document.getElementById("upcoming-race");
+const raceEventsEl = document.getElementById("race-events");
 
 const API_URL_LATEST_MEETING = "https://api.openf1.org/v1/meetings?meeting_key=latest";
 
+// 🏎️ **Fetch Race Data**
 async function fetchRaceData() {
     try {
-        console.log("Fetching race data..."); // Debug step 1
+        console.log("Fetching race data...");
 
         const response = await fetch(API_URL_LATEST_MEETING);
         const data = await response.json();
-        
-        window.latestRaceData = data; // Make it accessible in the console
-        console.log("Latest Meeting Data:", data); // Debugging output
+
+        window.latestRaceData = data; // Debugging: store it in global scope
+        console.log("Latest Meeting Data:", data);
 
         if (!data || data.length === 0) {
             currentRaceEl.innerHTML = "<p>No current race available.</p>";
@@ -19,10 +21,11 @@ async function fetchRaceData() {
             return;
         }
 
-        const latestMeeting = data[0]; 
+        const latestMeeting = data[0]; // Latest race weekend
         const raceDate = latestMeeting.date_start ? new Date(latestMeeting.date_start) : "Unknown Date";
         const gmtOffset = latestMeeting.gmt_offset || "N/A";
 
+        // 🏁 Display Current Race Info
         currentRaceEl.innerHTML = `
             <h2>Current Race</h2>
             <p><strong>${latestMeeting.meeting_name || "Unknown Race"}</strong></p>
@@ -31,35 +34,23 @@ async function fetchRaceData() {
             <p>📅 Start Time: ${raceDate !== "Unknown Date" ? raceDate.toLocaleString() : "Unknown"} (GMT ${gmtOffset})</p>
         `;
 
-        // Fetch Upcoming Race
-        const responseAllMeetings = await fetch("https://api.openf1.org/v1/meetings");
-        const allMeetings = await responseAllMeetings.json();
-        
-        window.allMeetingsData = allMeetings; // Debugging: store it in global scope
-        console.log("All Meetings Data:", allMeetings); // Debugging output
+        // 🕒 Calculate Countdown for Next Race Session
+        const nextRaceDate = new Date(latestMeeting.date_start);
+        const countdown = calculateCountdown(nextRaceDate);
+        upcomingRaceEl.innerHTML = `
+            <h2>Next Race Countdown</h2>
+            <p>Time until next race: <strong>${countdown}</strong></p>
+        `;
 
-        const upcomingMeeting = allMeetings.find(meeting => new Date(meeting.date_start) > new Date());
-
-        if (upcomingMeeting) {
-            const upcomingDate = new Date(upcomingMeeting.date_start);
-            upcomingRaceEl.innerHTML = `
-                <h2>Upcoming Race</h2>
-                <p><strong>${upcomingMeeting.meeting_name || "Unknown Race"}</strong></p>
-                <p>📍 ${upcomingMeeting.location || "Unknown Location"}, ${upcomingMeeting.country_name || "Unknown Country"}</p>
-                <p>🏁 Circuit: ${upcomingMeeting.circuit_short_name || "Unknown Circuit"}</p>
-                <p>📅 Start Time: ${upcomingDate.toLocaleString()} (GMT ${upcomingMeeting.gmt_offset || "N/A"})</p>
-            `;
-        } else {
-            upcomingRaceEl.innerHTML = "<p>No upcoming race found.</p>";
-        }
-
+        // 🏎️ **List All Race Weekend Events**
+        const eventSessions = latestMeeting.sessions || [];
+        raceEventsEl.innerHTML = `
+            <h3>Race Weekend Events</h3>
+            <ul>
+                ${eventSessions.map(session => `
+                    <li>${session.session_name} - ${new Date(session.date_start).toLocaleString()}</li>
+                `).join('')}
+            </ul>
+        `;
     } catch (error) {
-        console.error("Error fetching race data:", error);
-        currentRaceEl.innerHTML = "<p>Error loading current race data.</p>";
-        upcomingRaceEl.innerHTML = "<p>Error loading upcoming race data.</p>";
-    }
-}
-
-// Refresh every 30 seconds
-setInterval(fetchRaceData, 30000);
-fetchRaceData();
+        console.error("Error fetching race data:", error
