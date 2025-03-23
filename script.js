@@ -53,4 +53,29 @@ async function fetchRaceData() {
             </ul>
         `;
     } catch (error) {
-        console.error("Error fetching race data:", error
+        console.error("Error fetching race data:", error);
+        currentRaceEl.innerHTML = "<p>Error loading current race data.</p>";
+        upcomingRaceEl.innerHTML = "<p>Error loading upcoming race data.</p>";
+    }
+}
+
+// 🕒 **Helper Function to Calculate Countdown**
+function calculateCountdown(targetDate) {
+    const now = new Date();
+    const timeRemaining = targetDate - now;
+
+    if (timeRemaining <= 0) {
+        return "Race has started!";
+    }
+
+    const seconds = Math.floor((timeRemaining / 1000) % 60);
+    const minutes = Math.floor((timeRemaining / (1000 * 60)) % 60);
+    const hours = Math.floor((timeRemaining / (1000 * 60 * 60)) % 24);
+    const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+
+    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+}
+
+// Refresh every second for the countdown
+setInterval(fetchRaceData, 1000);  // Update countdown every second
+fetchRaceData();
