@@ -76,6 +76,8 @@ function calculateCountdown(targetDate) {
     return `${days}d ${hours}h ${minutes}m ${seconds}s`;
 }
 
+// 🏁 **Call the function once when the page loads and start interval afterwards**
+fetchRaceData(); // Initial call to fetch race data
+
 // Refresh every second for the countdown
 setInterval(fetchRaceData, 1000);  // Update countdown every second
-fetchRaceData();
