@@ -34,7 +34,7 @@ async function fetchUpcomingRace() {
 
         // 🏁 Display Upcoming Race Info
         upcomingRaceEl.innerHTML = `
-            <h2>Next Race</h2>
+            <h2>Upcoming Race</h2>
             <p><strong>${nextRace.meeting_name || "Unknown Race"}</strong></p>
             <p>📍 ${nextRace.location || "Unknown Location"}, ${nextRace.country_name || "Unknown Country"}</p>
             <p>🏁 Circuit: ${nextRace.circuit_short_name || "Unknown Circuit"}</p>
